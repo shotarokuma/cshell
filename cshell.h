@@ -62,8 +62,9 @@ void CShell_printLogs(CShell *cshell)
   for (int i = 0; i < cshell->currLogs; i++)
   {
     Command log = cshell->logs[i];
-    printf("%ld", log.time);
-    printf("%s", log.name);
+    
+    printf("%s\n", ctime(&log.time));
+    printf("%s\n", log.name);
   }
 }
 
@@ -78,9 +79,9 @@ void CShell_print(CShell *cshell, char command[MAX_ARGS][MAX_INPUT])
     {
       for(int j = 0; j < cshell -> currEnvs; j++)
       {
-        if(strcmp(cshell -> envs[j].name, &command[0][1]) == 0)
+        if(strcmp(cshell -> envs[j].name, &command[1][1]) == 0)
         {
-           printf("%s\n", cshell -> envs[i].value);
+           printf("%s\n", cshell -> envs[j].value);
            return;
         }
       }
