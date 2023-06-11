@@ -1,0 +1,5 @@
+$VAR=foo
+print $VAR
+whomai
+theme red
+log

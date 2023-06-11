@@ -46,8 +46,14 @@ void operate(CShell *cshell, char input[])
   {
     CShell_theme(cshell, command[1]);
     exit(0);
-  }else if(pid == 0){
+  }
+  else if (pid == 0 && command[0][0] != '$')
+  {
     system(input);
+    exit(0);
+  }
+  else if (pid == 0)
+  {
     exit(0);
   }
 
@@ -69,13 +75,41 @@ void interactiveMode(CShell *cshell)
   while (fgets(input, sizeof(input), stdin))
   {
     input[strcspn(input, "\n")] = '\0';
-    if(strcmp(input, "exit") == 0)
+    if (strcmp(input, "exit") == 0)
     {
       break;
     }
     CShell_appendLogs(cshell, input);
     operate(cshell, input);
     printf("%s", cshell->name);
+  }
+}
+
+void scriptMode(CShell *cshell, char input[])
+{
+  char lines[MAX_ARGS][MAX_INPUT];
+  char *line = NULL;
+  size_t len = 0;
+  int i = 0;
+  FILE *script = fopen(input, "r");
+  if (script)
+  {
+    while ((getline(&line, &len, script)) != -1)
+    {
+      stpcpy(lines[i], line);
+      i++;
+    }
+    fclose(script);
+    for (int j = 0; j < i; j++)
+    {
+      if(j != i - 1)
+      {
+        lines[j][strcspn(lines[j], "\n")] = '\0';
+      }
+      printf("%s %s\nm", cshell->name, lines[j]);
+      CShell_appendLogs(cshell, lines[j]);
+      operate(cshell, lines[j]);
+    }
   }
 }
 
@@ -88,6 +122,11 @@ int main(int argc, char *argv[])
   {
     interactiveMode(cshell);
   }
+  else if (argc == 2)
+  {
+    scriptMode(cshell, argv[1]);
+  }
+
   CShell_cleanup(cshell);
   return 0;
 }
