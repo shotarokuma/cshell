@@ -47,6 +47,7 @@ void operate(CShell *cshell, char input[])
     CShell_theme(cshell, command[1]);
     exit(0);
   }else if(pid == 0){
+    system(input);
     exit(0);
   }
 
