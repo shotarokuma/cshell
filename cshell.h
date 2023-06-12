@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include <string.h>
+#include <errno.h>
 #include <stdlib.h>
 
 #define MAX_SIZE 999
@@ -28,7 +29,8 @@ typedef struct
   int currEnvs;
   Command logs[LIMIT_SIZE];
   EnvVar envs[LIMIT_SIZE];
-  char name[8];
+  char name[9];
+  char bye[4];
 } CShell;
 
 void CShell_init(CShell *cshell)
@@ -36,6 +38,7 @@ void CShell_init(CShell *cshell)
   cshell->currLogs = 0;
   cshell->currEnvs = 0;
   strcpy(cshell -> name, "cshell$ ");
+  strcpy(cshell -> bye, "Bye!\n");
 }
 
 void CShell_appendEnv(CShell *cshell, const char *name, const char *value)
@@ -43,6 +46,14 @@ void CShell_appendEnv(CShell *cshell, const char *name, const char *value)
   EnvVar newEnv;
   newEnv.name = strdup(name);
   newEnv.value = strdup(value);
+   for(int i = 0; i < cshell -> currEnvs; i++)
+    {
+        if(strcmp(cshell -> envs[i].name, newEnv.name) == 0)
+        {
+           cshell -> envs[i].value = strdup(value);
+           return;
+        }
+    }
   cshell->envs[cshell->currEnvs] = newEnv;
   cshell->currEnvs++;
 }
@@ -63,8 +74,8 @@ void CShell_printLogs(CShell *cshell)
   {
     Command log = cshell->logs[i];
     
-    printf("%s\n", ctime(&log.time));
-    printf("%s\n", log.name);
+    printf("%s", ctime(&log.time));
+    printf(" %s\n", log.name);
   }
 }
 
@@ -85,6 +96,8 @@ void CShell_print(CShell *cshell, char command[MAX_ARGS][MAX_INPUT])
            return;
         }
       }
+      fprintf(stderr,"No Environment Variable %s found.", command[1]);
+      printf("%s", "\n");
     }
     if(i != 0)
     {
@@ -106,29 +119,12 @@ void CShell_theme(CShell *cShell, char *input)
   {
     printf("\x1B[32m");
   }
-  else if (strcmp(input, "yellow") == 0)
-  {
-    printf("\x1B[33m");
-  }
   else if (strcmp(input, "blue") == 0)
   {
     printf("\x1B[34m");
   }
-  else if (strcmp(input, "magent") == 0)
-  {
-    printf("\x1B[35m");
-  }
-  else if (strcmp(input, "cyan") == 0)
-  {
-    printf("\x1B[36m");
-  }
-  else if (strcmp(input, "white") == 0)
-  {
-    printf("\x1B[37m");
-  }
-  else if (strcmp(input, "black") == 0)
-  {
-    printf("\x1B[30m");
+  else{
+    fprintf(stderr, "%s\n", "unsupported theme");
   }
 }
 

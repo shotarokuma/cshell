@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -16,6 +18,52 @@ void modifyInput(char command[MAX_ARGS][MAX_INPUT], char input[])
     token = strtok(NULL, " ");
   }
   strcpy(command[i], "\0");
+}
+
+void nonbuiled(char input[])
+{
+  int pipefd[2];
+  pid_t pid;
+  char buffer[MAX_INPUT];
+  if (pipe(pipefd) == -1)
+  {
+    return;
+  }
+
+  pid = fork();
+  if (pid < 0)
+  {
+    return;
+  }
+  else if (pid == 0)
+  {
+    close(pipefd[0]);
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipefd[1], STDERR_FILENO);
+    int code = system(input);
+    if (code == -1 | WEXITSTATUS(code) == 127)
+    {
+      exit(1);
+    }
+    close(pipefd[1]);
+    exit(0);
+  }
+  else
+  {
+    close(pipefd[1]);
+    int status;
+    waitpid(pid, &status, 0);
+    ssize_t n = read(pipefd[0], buffer, sizeof(buffer));
+    if (status == 0 && n > 0)
+    {
+      fwrite(buffer, 1, n, stdout);
+    }
+    else
+    {
+      fprintf(stderr, "Missing keyword or command, or permission problem\n");
+    }
+    close(pipefd[0]);
+  }
 }
 
 void operate(CShell *cshell, char input[])
@@ -49,7 +97,7 @@ void operate(CShell *cshell, char input[])
   }
   else if (pid == 0 && command[0][0] != '$')
   {
-    system(input);
+    nonbuiled(input);
     exit(0);
   }
   else if (pid == 0)
@@ -61,9 +109,19 @@ void operate(CShell *cshell, char input[])
   {
     char name[MAX_INPUT];
     char value[MAX_INPUT];
-    strcpy(name, strtok(command[0], "="));
-    strcpy(value, strtok(NULL, "="));
-    CShell_appendEnv(cshell, name + 1, value);
+    int i = 0;
+    while (command[0][i] != '\0')
+    {
+      if (command[0][i] == '=')
+      {
+        strcpy(name, strtok(command[0], "="));
+        strcpy(value, strtok(NULL, "="));
+        CShell_appendEnv(cshell, name + 1, value);
+        return;
+      }
+      i++;
+    }
+    fprintf(stderr, "%s\n", "Variable value expected");
   }
 }
 
@@ -77,6 +135,7 @@ void interactiveMode(CShell *cshell)
     input[strcspn(input, "\n")] = '\0';
     if (strcmp(input, "exit") == 0)
     {
+      printf("%s", cshell->bye);
       break;
     }
     CShell_appendLogs(cshell, input);
@@ -102,14 +161,24 @@ void scriptMode(CShell *cshell, char input[])
     fclose(script);
     for (int j = 0; j < i; j++)
     {
-      if(j != i - 1)
+      if (j != i - 1)
       {
         lines[j][strcspn(lines[j], "\n")] = '\0';
       }
-      printf("%s %s\nm", cshell->name, lines[j]);
+      if (strcmp(lines[j], "exit") == 0)
+      {
+        printf("%s", cshell->bye);
+        break;
+      }
+      printf("%s %s\n", cshell->name, lines[j]);
       CShell_appendLogs(cshell, lines[j]);
       operate(cshell, lines[j]);
     }
+  }
+  else
+  {
+    fprintf(stderr, "Unable to read script file: %s\n", input);
+    exit(1);
   }
 }
 
