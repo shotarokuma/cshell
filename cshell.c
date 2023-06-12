@@ -41,7 +41,7 @@ void nonbuiled(char input[])
     dup2(pipefd[1], STDOUT_FILENO);
     dup2(pipefd[1], STDERR_FILENO);
     int code = system(input);
-    if (code == -1 | WEXITSTATUS(code) == 127)
+    if (code == -1 || WEXITSTATUS(code) == 127)
     {
       exit(1);
     }
