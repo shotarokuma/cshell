@@ -174,6 +174,10 @@ void scriptMode(CShell *cshell, char input[])
       CShell_appendLogs(cshell, lines[j]);
       operate(cshell, lines[j]);
     }
+    if (line)
+    {
+      free(line);
+    }
   }
   else
   {
@@ -196,6 +200,6 @@ int main(int argc, char *argv[])
     scriptMode(cshell, argv[1]);
   }
 
-  CShell_cleanup(cshell);
+  free(cshell);
   return 0;
 }

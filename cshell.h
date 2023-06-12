@@ -50,8 +50,11 @@ void CShell_appendEnv(CShell *cshell, const char *name, const char *value)
     {
         if(strcmp(cshell -> envs[i].name, newEnv.name) == 0)
         {
-           cshell -> envs[i].value = strdup(value);
-           return;
+          free(cshell->envs[i].value); 
+          cshell->envs[i].value = strdup(value); 
+          free(newEnv.name); 
+          free(newEnv.value); 
+          return;
         }
     }
   cshell->envs[cshell->currEnvs] = newEnv;
@@ -96,8 +99,9 @@ void CShell_print(CShell *cshell, char command[MAX_ARGS][MAX_INPUT])
            return;
         }
       }
-      fprintf(stderr,"No Environment Variable %s found.", command[1]);
+      fprintf(stderr,"Error: No Environment Variable %s found.", command[1]);
       printf("%s", "\n");
+      return;
     }
     if(i != 0)
     {
@@ -126,11 +130,6 @@ void CShell_theme(CShell *cShell, char *input)
   else{
     fprintf(stderr, "%s\n", "unsupported theme");
   }
-}
-
-void CShell_cleanup(CShell *cShell)
-{
-  free(cShell);
 }
 
 #endif
